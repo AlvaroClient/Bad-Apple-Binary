@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video dalam Format Biner</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: black;
+            color: white; /* Warna teks biner putih */
+            font-family: monospace;
+            white-space: pre;
+            overflow: hidden; /* Sembunyikan overflow */
+        }
+        #binaryOutput {
+            font-size: 2px; /* Ukuran font dapat disesuaikan */
+            line-height: 0.8;
+            max-width: 100%; /* Sesuaikan lebar */
+            overflow: auto; /* Tambahkan scroll jika diperlukan */
+            text-align: center; /* Pusatkan teks */
+        }
+        input[type="file"] {
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Tampilkan Video dalam Biner (0 dan 1)</h1>
+    <input type="file" id="videoInput" accept="video/mp4" />
+    <div id="binaryOutput"></div>
+
+    <script>
+        const videoElement = document.createElement('video');
+        let binaryOutput = document.getElementById('binaryOutput');
+
+        document.getElementById('videoInput').addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const url = URL.createObjectURL(file);
+                videoElement.src = url;
+                videoElement.addEventListener('loadeddata', () => {
+                    videoElement.play();
+                    drawFrame();
+                });
+            }
+        });
+
+        function drawFrame() {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = 256; // Lebar untuk resolusi SD
+            canvas.height = 256; // Tinggi untuk resolusi SD
+            
+            ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+            const frameData = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+            let binaryString = '';
+
+            for (let i = 0; i < frameData.length; i += 4) {
+                const r = frameData[i];     // Merah
+                const g = frameData[i + 1]; // Hijau
+                const b = frameData[i + 2]; // Biru
+                const brightness = (r + g + b) / 3; // Rata-rata kecerahan
+
+                binaryString += brightness > 128 ? '1' : '0';
+                
+                if ((i / 4 + 1) % canvas.width === 0) { // Setiap baris 854 karakter
+                    binaryString += '\n';
+                }
+            }
+
+            binaryOutput.textContent = binaryString;
+
+            setTimeout(() => {
+                if (!videoElement.paused && !videoElement.ended) {
+                    drawFrame();
+                }
+            }, 100);
+        }
+    </script>
+</body>
+</html>
